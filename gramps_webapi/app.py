@@ -23,8 +23,10 @@ import logging
 import os
 import warnings
 from typing import Any, Dict, Optional
+from auth.oidc import configure_oauth, oidc_bp
+from dotenv import load_dotenv
 
-from flask import Flask, abort, g, send_from_directory
+from flask import Flask, abort, g, send_from_directory, session
 from flask_compress import Compress
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -42,6 +44,7 @@ from .const import API_PREFIX, ENV_CONFIG_FILE, TREE_MULTI
 from .dbmanager import WebDbManager
 from .util.celery import create_celery
 
+load_dotenv()
 
 def deprecated_config_from_env(app):
     """Add deprecated config from environment variables.
@@ -79,7 +82,7 @@ def deprecated_config_from_env(app):
 def create_app(config: Optional[Dict[str, Any]] = None):
     """Flask application factory."""
     app = Flask(__name__)
-
+    app.secret_key = os.getenv("SECRET_KEY")
     app.logger.setLevel(logging.INFO)
 
     # load default config
@@ -142,6 +145,9 @@ def create_app(config: Optional[Dict[str, Any]] = None):
     app.config["SQLALCHEMY_DATABASE_URI"] = app.config["USER_DB_URI"]
     user_db.init_app(app)
 
+    configure_oauth(app)
+    app.register_blueprint(oidc_bp)
+    
     thumbnail_cache.init_app(app, config=app.config["THUMBNAIL_CACHE_CONFIG"])
 
     # enable CORS for /api/... resources

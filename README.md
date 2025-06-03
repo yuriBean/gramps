@@ -15,3 +15,42 @@ Gramps Web API is the backend of [Gramps Web](https://www.grampsweb.org/), a gen
 ## Related projects
 
 - Gramps Web frontend repository: https://github.com/gramps-project/gramps-web
+
+
+## OIDC Login (Backend Only)
+
+This backend-only implementation adds OpenID Connect (OIDC) login via Google, GitHub, and Microsoft using [Authlib](https://docs.authlib.org).
+
+### Features
+- Role-based login with Google, GitHub, Microsoft
+- Backend-only logic (no frontend UI changes)
+- Session-based user info (not persisted in DB)
+
+### Setup Instructions
+
+1. Install dependencies
+
+```bash
+pip install Authlib python-dotenv
+
+```
+
+2. Copy and fill your .env file
+
+```bash
+cp .env.example .env
+```
+
+3. Update .env with your OIDC client IDs and secrets
+
+4. Run the app
+
+5. Login
+
+Visit:
+
+    http://localhost:5000/auth/login/google
+
+    http://localhost:5000/auth/login/github
+
+    http://localhost:5000/auth/login/microsoft
