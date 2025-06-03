@@ -211,4 +211,47 @@ def create_app(config: Optional[Dict[str, Any]] = None):
     def ready():
         return {"status": "ready"}, 200
 
+    @oidc_bp.route("/callback/<provider>")
+    def authorize(provider):
+        client = oauth.create_client(provider)
+        token = client.authorize_access_token()
+        oidc_user = client.parse_id_token(token) if provider == "google" else client.get('user').json()
+        
+        # Get email from OIDC user info
+        email = oidc_user.get('email')
+        if not email:
+            return {"error": "No email provided by OIDC provider"}, 400
+        
+        # Check if user exists
+        query = user_db.session.query(User)
+        user = query.filter_by(email=email).scalar()
+        
+        if not user:
+            # Create new user with default role
+            try:
+                user = User(
+                    id=uuid.uuid4(),
+                    name=email.split('@')[0],  # Use part before @ as username
+                    email=email,
+                    fullname=oidc_user.get('name', ''),
+                    role=0,  # Default role
+                    pwhash='',  # No password for OIDC users
+                )
+                user_db.session.add(user)
+                user_db.session.commit()
+            except IntegrityError:
+                return {"error": "User creation failed"}, 400
+        
+        # Set up session
+        session['user_id'] = str(user.id)
+        session['user_name'] = user.name
+        session['user_role'] = user.role
+        
+        return {"status": "logged_in", "provider": provider, "user": {
+            "name": user.name,
+            "email": user.email,
+            "full_name": user.fullname,
+            "role": user.role
+        }}
+
     return app

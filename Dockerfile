@@ -97,5 +97,7 @@ model = SentenceTransformer('sentence-transformers/distiluse-base-multilingual-c
 EXPOSE 5000
 
 COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh && \
+    sed -i 's/\r$//' /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD gunicorn -w ${GUNICORN_NUM_WORKERS:-8} -b 0.0.0.0:5000 gramps_webapi.wsgi:app --timeout ${GUNICORN_TIMEOUT:-120} --limit-request-line 8190
